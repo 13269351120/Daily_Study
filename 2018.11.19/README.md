@@ -62,6 +62,103 @@ __总之__
 * 同步I/O向应用层序通知的是I/O就绪事件 , 就绪了 , 用户就可以对I/O进行主动的操作了 .  
 * 异步I/O向应用程序通知的I/O完成事件.  
 
+--- 
+
+### 元编程
+#### 类型元函数
+```cpp
+template <typename T>
+struct Fun_ {using type = T ;}
+
+template <>
+struct Fun_<int> {using type = unsigned int ;}
+
+template <>
+struct Fun_<long> {using type = unsigned long ;};
+
+Fun_<int> :: type h = 3 ;
+```  
+`解释`:
+后两个`template<>` 是 第一个 `template<typename T>`的**特化版本** ,  看到 空的<>很不熟悉 但是下面的代码应该是看到过的~ 是一种`偏特化`  
+```cpp
+template<class T1, class T2> struct foo
+{
+  void doStuff() { std::cout << "generic foo "; }
+};
+template<class T1>
+struct foo<T1, int>
+{
+ void doStuff() { std::cout << "specific foo with T2=int"; }
+};
+```  
+
+Fun_ 与C++一般意义上的函数看起来完全不同, 但是Fun_具备了一个元函数所需要的全部性质 
+
+> * 输入为某个类型信息T , 以模板参数的形式传递到Fun_模板中
+> * 输出为Fun_模板的内部类型 type, 即 Fun_<T>::type 
+> * 映射体现为模板通过特化实现的转换逻辑 
+
+#### 各式各样的元函数
+一个模板就是一个元函数:
+```cpp
+template <typename T>
+struct Fun {} ;
+```  
+#### 无参元函数
+```cpp
+struct Fun {using type = int ;} ;
+constexpr int fun() {return 10 ;}
+```  
+前者返回一个 类型 int 后者返回数值 10 这样看元函数还是蛮简单的 
+
+#### 基于C++14中对constexpr 的扩展 
+我们可以简化
+```cpp
+constexpr int fun(int a) { return a+1 ;}
+```
+`调用方式` : **fun(3)**
+
+```cpp
+template <int a>
+constexpr int fun = a + 1 ;
+```
+`调用方式` : **fun<3>**
+
+#### 多返回值的元函数:
+```cpp
+template<>
+struct Fun_<int>
+{
+	using reference_type = int& ;
+	using const_reference_type = const int & ;
+	using value_type = int ;
+}
+```  
+#### type_traits
+这是一个元函数库 , 由`boost`引入的 `C++11`将其纳入其中,这个库实现了 `类型变换`  `类型比较` 与 `判断` 等功能  
+
+#### 元函数的命名方式(C++模板元编程实战中的命名方式 可以借鉴)  
+根据原函数的`返回值形式`的不同 元函数的命名方式可以区分开   
+如果函数的返回值 要用某种依赖型的名称表示 那么函数将被命名为` xxx_ ` 形式   
+否则就可以直接用 `xxx` 表示 
+
+`典型例子` :
+* 依赖型的:
+```cpp
+template <int a , int b>
+struct Add_
+{
+	constexpr static int value = a + b ; 
+}
+```
+`调用方式` : **constexpr int x1 = Add_<2,3>::value**;
+
+* 非依赖型的:
+```cpp
+template <int a , int b >
+constexpr int Add = a + b ;
+```   
+`调用方式` : **constexpr int x2 = Add<2,3>** ;
 
 
 
