@@ -68,10 +68,10 @@ __总之__
 #### 类型元函数
 ```cpp
 template <typename T>
-struct Fun_ {using type = T ;}
+struct Fun_ {using type = T ;};
 
 template <>
-struct Fun_<int> {using type = unsigned int ;}
+struct Fun_<int> {using type = unsigned int ;};
 
 template <>
 struct Fun_<long> {using type = unsigned long ;};
@@ -132,7 +132,7 @@ struct Fun_<int>
 	using reference_type = int& ;
 	using const_reference_type = const int & ;
 	using value_type = int ;
-}
+};
 ```  
 #### type_traits
 这是一个元函数库 , 由`boost`引入的 `C++11`将其纳入其中,这个库实现了 `类型变换`  `类型比较` 与 `判断` 等功能  
@@ -149,7 +149,7 @@ template <int a , int b>
 struct Add_
 {
 	constexpr static int value = a + b ; 
-}
+};
 ```
 `调用方式` : **constexpr int x1 = Add_<2,3>::value**;
 
