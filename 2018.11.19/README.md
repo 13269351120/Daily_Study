@@ -160,6 +160,56 @@ constexpr int Add = a + b ;
 ```   
 `调用方式` : **constexpr int x2 = Add<2,3>** ;
 
+#### 模板作为元函数的输入  
+C++元函数可以操作的数据包含3类: `数值` `类型` 和 `模板` , 前面讨论了 `数值` 和 `类型` 作为输入 元数据 ,现在讨论 `模板` 作为 `元数据`    
+```cpp
+template <temolate <typename> class T1 , typename T2>
+struct Fun_{
+	using type = typename T1<T2>::type;
+}; 
+
+template <template<typename>class T1 , typename T2>
+using Fun = typename Fun_<T1,T2>::type ;
+
+Fun<std::remove_reference , int& > h = 3 ;
+```  
+这个元函数 接收两个输入参数 , 第一个参数是 模板 第二个参数是 类型 , 将类型应用于模板之上 , 获取到的 结果类型作为返回值 , 传入 `std::remove_reference` , 这是一个模板 , 和 `int &` 这是一个类型 , 根据调用规则 , 这个函数将返回 int 
+
+从函数式程序设计的角度来说 , 上述代码所定义的Fun 是一个典型的高阶函数 , 即 以另一个函数为输入参数的函数 , 可以总结为 如下的数学表达式 
+                                                   `Fun(T,t) = T(t)` 
+
+#### 模板作为元函数的输出   
+比较复杂 需要时间去沉淀理解...  
+```cpp
+template <bool AddOrRemoveRef> struct Fun_ ;
+
+template <>
+struct Fun_<true>
+{
+	template <typename T>
+	using type = std::add_lvalue_reference<T> ;
+};
+
+template <>
+struct Fun_<false>
+{
+	template <typename T>
+	using type = std::remove_reference<T> ;
+} ;
+
+template <typename T>
+template <bool AddorRemove>
+using Fun = typename Fun_<AddOrRemove> ::template type<T>;
+
+template<typename T>
+using Res_ = Fun<false> ;
+
+Res_<int&>::type h = 3 ; 
+```  
+这个比较复杂 现在暂时 先记着 未来填坑   
+这个整个的处理过程表示为数学过程:
+                                              `Fun(addOrRemove) = T`  
+其中,T是一个元函数
 
 
 
