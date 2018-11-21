@@ -69,7 +69,33 @@ struct RunTimeExample
 可能一开始会觉得上述代码是错误的  , fun1()里面调用到了 fun2() , 而fun2() 还没有出现过 , 但是要注意的是 : 在编译期 , 编译器会扫描两遍结构体的代码 , 第一遍处理声明 , 第二遍才会深入到函数的定义之中 . (这是所有编译的情况 ? )  但是 开始的那个 顺序代码不能调换顺序 , 所以说 顺序代码的 顺序性还是值得注意的   
 
 ##### 分支执行的代码
-编译期的分支逻辑 既可以表现为纯粹的 元函数 , 也可以与运行期的执行逻辑相结合  此前有一个代码比较复杂 其实就是使用了典型的分支结构  
+编译期的分支逻辑 既可以表现为纯粹的 元函数 , 也可以与运行期的执行逻辑相结合  此前有一个代码比较复杂 其实就是使用了典型的分支结构 
+```cpp
+template <bool AddOrRemoveRef> struct Fun_ ;
+
+template <>
+struct Fun_<true>
+{
+	template <typename T>
+	using type = std::add_lvalue_reference<T> ;
+};
+
+template <>
+struct Fun_<false>
+{
+	template <typename T>
+	using type = std::remove_reference<T> ;
+} ;
+
+template <typename T>
+template <bool AddorRemove>
+using Fun = typename Fun_<AddOrRemove> ::template type<T>;
+
+template<typename T>
+using Res_ = Fun<false> ;
+
+Res_<int&>::type h = 3 ; 
+``` 
 上例中使用了 模板的特化 或者 部分特化(是不是可以称为 偏特化)  实现分支 , 这是一种非常常见的分支实现方式 ,未来会介绍讨论更多的分支实现方式以及其优缺点 . (今天就看到这儿 ...)   
        
 
