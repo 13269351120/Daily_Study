@@ -162,7 +162,8 @@ linux下异步I/O用的比较少 看图
 引出两者的定义:   
 > * synchronous IO : A synchronous IO operation causes the requesting process to be blocked until that IO operation completes   
 > * asynchronous IO : An asynchronous IO operation does not cause the requesting process to be blocked  
-一言以蔽之 : 同步IO 就会在 `IO请求`的时候 导致**发出请求的进程(线程)进行阻塞** , 而异步则不会 , 同步和异步 表示的是 发出IO请求的进程的情况.  
+一言以蔽之 : 同步IO 就会在 `IO请求`的时候 导致**发出请求的进程(线程)进行阻塞** , 而异步则不会 , 同步和异步 表示的是 发出IO请求的进程的情况.    
+
 `哪些属于同步IO呢` :  
 那么其实 阻塞IO IO复用 非阻塞IO 都属于同步IO , 阻塞IO 和 IO复用在发出请求后 , 都阻塞了用户线程  这个没有问题 , `特别注意` 非阻塞IO 刚刚说了 , 非阻塞IO 是在发出请求后 , 自己还可以不停去询问 去检查立即返回的errono来判断状态 , 那怎么是同步IO呢? 根据博客的分析 , 定义中的IO操作 , 是指真实的IO操作 , 就是 recvfrom 这个系统调用 , 在内核准备好数据之前 , 非阻塞IO确实没有阻塞用户进程 , 但是当内核准备好数据了 , 将数据从内核拷贝到用户内存的时候 , 这个时候 用户进程 是被阻塞的 , 可以去看 非阻塞IO的那个图 .   
 
