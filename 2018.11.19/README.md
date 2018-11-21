@@ -76,7 +76,7 @@ __总之__
 #### Reactor模式  
 同步I/O模型通常用于实现`Reactor模式` . Reactor模式要求 `主线程` 只 负责监听文件描述符上 是否有事件发生 , 有的话就立即通知`工作线程` , 除此之外 主线程**不做任何其他实质性**的 工作 .  
 
-<div align=center><img width="300" height="300" src="https://github.com/13269351120/Daily_Study/raw/master/2018.11.19/reactor.png"/></div>   
+<div align=center><img width="300" height="600" src="https://github.com/13269351120/Daily_Study/raw/master/2018.11.19/reactor.png"/></div>   
 
 `实现的Reactor模式的工作流程是`:
 > * 主线程往epoll内核事件表中注册socket上的 读就绪 事件 
@@ -90,7 +90,7 @@ __总之__
 
 #### Proactor(不太理解)  
 与`Reactor模式`不同 `Proactor模式` 将所有的I/O操作都交给`主线程` 和 `内核`来处理 , 工作线程仅仅负责业务逻辑 使用`异步I/O模型`   
-<div align=center><img width="300" height="300" src="https://github.com/13269351120/Daily_Study/raw/master/2018.11.19/proactor.png"/></div>    
+<div align=center><img width="300" height="600" src="https://github.com/13269351120/Daily_Study/raw/master/2018.11.19/proactor.png"/></div>    
 
 `实现的Proactor的工作流程`:      
 
@@ -131,7 +131,7 @@ I/O发生时涉及到的对象和步骤
 
 `阻塞I/O`  
 在linux,默认情况下所有的socket都是阻塞的 , 一个典型的 读操作的流程  
-<div align=center><img width="300" height="300" src="https://github.com/13269351120/Daily_Study/raw/master/2018.11.19/block.gif"/></div>  
+<div align=center><img width="300" height="500" src="https://github.com/13269351120/Daily_Study/raw/master/2018.11.19/block.gif"/></div>  
 
 可以看到 用户调用 recvfrom这个系统调用, 内核开始了I/O的第一个阶段 : 准备数据   
 对于网络IO来说 , 很多数据一开始 还未到达,这个时候 内核 需要等待数据到来 , 而在用户进程这边 , 整个进程会被阻塞 , 当 内核等到 数据全部准备好了 , 再将数据从 内核 拷贝到 用户内存中 ,然后 内核返回结果 , 用户进程 才解除 阻塞的状态 .重新运行起来 .  
@@ -140,7 +140,7 @@ I/O发生时涉及到的对象和步骤
 
 `非阻塞I/O`   
 linux下可以通过socket设置将其变成非阻塞的,下图    
-<div align=center><img width="300" height="300" src="https://github.com/13269351120/Daily_Study/raw/master/2018.11.19/nonblock.gif"/></div>  
+<div align=center><img width="300" height="500" src="https://github.com/13269351120/Daily_Study/raw/master/2018.11.19/nonblock.gif"/></div>  
 
 图中可以看出 用户进程发出 recvfrom系统调用后 内核的数据还没有准备好 , 它并不会阻塞用户的进程 , 而是立即返回一个 errono 比如EWOULDBLOCK , 根据这立即返回的 错误信息 它就知道 数据还没有准备好 , 然后隔一会又去问 内核 , 如果准备好了 ,内核将数据拷贝到用户内存中 , 并返回一个 ok .   
 `总结` : 非阻塞I/O在内核里 准备数据的阶段是阻塞的 , 但是 用户会一直去主动询问内核 数据准备好了没有  
@@ -148,17 +148,42 @@ linux下可以通过socket设置将其变成非阻塞的,下图
 
 `I/O复用`  
 I/O复用是通过 select poll 或者 epoll_wait 系统调用实现的 , 好处在于 单个进程能够处理多个 网络连接的I/O,它的基本原理是select epoll会不断地轮询 所负责的所有socket , 当某个socket有数据到达了,就会通知用户进程 进行处理 .
-<div align=center><img width="300" height="300" src="https://github.com/13269351120/Daily_Study/raw/master/2018.11.19/IOmulti.gif"/></div>     
+<div align=center><img width="300" height="500" src="https://github.com/13269351120/Daily_Study/raw/master/2018.11.19/IOmulti.gif"/></div>     
 当用户进程调用select 那么整个进程会被阻塞 , 而同时, 内核会 监视所有select负责的socket, 当负责的任何一个socket中的数据准备好了 , select 就会返回, 这个时候用户取消阻塞 , 进行 读处理 , 需要注意的是 : 在I/O复用的时候 , 实际上 对于每一个 socket我们都设置成 non-blocking的 , 但是 如上图所示 和 我们的分析 , 用户进程是一直 阻塞的 , 这里要注意 , 用户进程 是被 select 阻塞的 , 而不是被socket阻塞的 , 为了彻底理解这个 我又查了 知乎 https://www.zhihu.com/question/33072351 
-在这里 提出了 使用 I/O复用的时候 大多数情况是要把 socket设置成 non-blocking的 , 理由是出自 最高赞者 晨随 , 用户通过select 让内核帮忙 监听了 若干个 socket , 当内核检测到 某个socket可读的时候 就会返回 通知 用户进程进行 对该socket的一系列操作 , 但是这里要注意 (需要注意的东西也太多了吧 >.<), 返回的socket 的读操作 不一定是 顺畅的 , 比如 协议栈检查到这个分节检验和错误 , 然后丢弃了这个分节 , 这个时候直接调用 read 这个socket 则无数据可读 , 如果socket 设置成 阻塞形式 , 则会一直阻塞在这里 , 所以 为了 安全起见 , 应该把socket 设置成 non-blocking的 , 那么又在想 , 为什么还会有少数情况 可以不设置 成 non-blocking的呢 ? 挖个坑 未来填吧!!!    
+在这里 提出了 使用 I/O复用的时候 大多数情况是要把 socket设置成 non-blocking的 , 理由是出自 最高赞者: `晨随` , 用户通过select 让内核帮忙 监听了 若干个 `socket` , 当内核检测到 某个`socket`可读的时候 就会返回 通知 用户进程进行 对该socket的一系列操作 , 但是这里要注意 (需要注意的东西也太多了吧 >.<), 返回的`socket` 的`读操作` 不一定是 顺畅的 , 比如 协议栈检查到这个`分节检验和错误` , 然后`丢弃`了这个分节 , 这个时候直接调用 `read` 这个socket 则无 数据可读 , 如果`socket` 设置成 阻塞形式 , 则会一直阻塞在这里 , 所以 为了 安全起见 , 应该把socket 设置成 **non-blocking** 的 , 那么又在想 , **为什么还会有少数情况 可以不设置 成 non-blocking的呢 ? 挖个坑 未来填吧!!!**      
 `总结` : I/O复用和 阻塞I/O是差不多的 , 在 用户进程 和 内核中都会阻塞 , 只不过 I/O复用在内核中 会 轮询多个 socket , 阻塞I/O只有 等一个 , 那这个的效率地提升 可想而知 , 所以 select 或者 epoll 能够 使服务器的连接数上升 也 很容易理解了 ,     
-`感性的去理解 `: I/O复用 是一个 比 阻塞I/O更加懒的一个人 , 他把一大坨事情 都交给了别人去干 , 只要那个人做完了其中一件事 , 就通知他 , 啧啧啧  , 压榨啊 .
+`感性的去理解 `: I/O复用 是一个 比 阻塞I/O更加懒的一个人 , 他把一大坨事情 都交给了别人去干 , 只要那个人做完了其中一件事 , 就通知他 , 啧啧啧  , 压榨啊 .  
 
 `异步I/O` 
-linux下异步I/O用的比较少 看图  
+linux下异步I/O用的比较少 看图   
 <div align=center><img width="300" height="300" src="https://github.com/13269351120/Daily_Study/raw/master/2018.11.19/asyn.gif"/></div>  
 
-`感性的理解` :用户进程发起`read` 操作之后 , 立刻就可以去干其他的事情了 , 它不像是 `阻塞I/O` 很懒 等着 内核 通知 , 也不像 `非阻塞I/O` 那么 急躁 , 一遍又一遍的去催内核 
+`感性的理解` :用户进程发起`read` 操作之后 , 立刻就可以去干其他的事情了 , 它不像是 `阻塞I/O` 很懒 等着 内核 通知 , 也不像 `非阻塞I/O` 那么 急躁 , 一遍又一遍的去催内核 , 所以 异步IO可以看成是一个 正常人...  拜托内核的事 就等着内核处理呗 , 自己干接下来的事 ... 
+
+#### 整理和总结  
+`blocking 和 non-blocking的区别`:
+> * 阻塞的程度不同 : 通过把IO的步骤分成两个后 , 我们可以清楚的看到 , blocking IO 在 内核 和 用户线程都阻塞了 , 而 non-blocking IO 在用户线程中 非阻塞  
+> * 调用函数返回的时间不同:  blocking IO 在调用函数后 , 不是立即返回的 , 等到内核收到数据,并把数据拷贝到用户线程中后返回 , 而non-blocking IO调用函数后是立即返回的 通过其错误值的类型去配短状态 .
+
+`synchronous 和 asynchronous的区别` :
+引出两者的定义:  
+> * synchronous IO : A synchronous IO operation causes the requesting process to be blocked until that IO operation completes   
+> * asynchronous IO : An asynchronous IO operation does not cause the requesting process to be blocked  
+一言以蔽之 : 同步IO 就会在 `IO请求`的时候 导致**发出请求的进程(线程)进行阻塞** , 而异步则不会 , 同步和异步 表示的是 发出IO请求的进程的情况.  
+`哪些属于同步IO呢` : 那么其实 阻塞IO IO复用 非阻塞IO 都属于同步IO , 阻塞IO 和 IO复用在发出请求后 , 都阻塞了用户线程  这个没有问题 , `特别注意` 非阻塞IO 刚刚说了 , 非阻塞IO 是在发出请求后 , 自己还可以不停去询问 去检查立即返回的errono来判断状态 , 那怎么是同步IO呢? 根据博客的分析 , 定义中的IO操作 , 是指真实的IO操作 , 就是 recvfrom 这个系统调用 , 在内核准备好数据之前 , 非阻塞IO确实没有阻塞用户进程 , 但是当内核准备好数据了 , 将数据从内核拷贝到用户内存的时候 , 这个时候 用户进程 是被阻塞的 , 可以去看 非阻塞IO的那个图 .   
+
+`哪些属于异步IO呢` : 异步IO操作之后  就直接返回再也不理睬了 , 直到内核发送一个信号 , 告诉进程说 IO 完成了 , 在整个过程中 , 进程是不会因为IO而阻塞的 .  
+`综上所述`:   
+我们对 各种IO形式有了新的理解, 在这里做一个形象的总结 以便记忆  :    
+##### 同步IO系列 :  
+> * 阻塞IO : `苦苦傻等僧` 他是一个懒人, 把事情交给别人(内核)后 , 自己就不再干别的什么事情了 , 也从侧面体现了 交给别人的这件事 他仿佛很希望得到结果 就一直苦等  
+> * 非阻塞IO : `急躁傻催僧` 他是一个急性子 , 把事情交给别人(内核)后 , 自己就经常去催 , 也从侧面体现了 交给别人的事 他也很上心 , 等到别人说 事情快做完了(内核中数据接收完整后),他就迫不及待去拿(从内核中copy,这个时候用户进程是阻塞的)  
+> * IO复用 : `更懒傻等僧` 在懒人的基础上更进一步 , 将很多件事 都交给别人做 , 当然自己对这些事 也还算是上心     
+
+##### 异步IO系列 : 
+> * 异步IO :  `无心正常人`  他是一个正常人的思维 ,交给别人的事情 就抱着 `信人不疑` 的态度 , 所以对交给别人的事 可以说是 不上心了 放下了包袱 , 继续自己的任务和旅程   
+
+##### 至于什么时候使用具体哪个IO 以及为什么 在这里先留一个坑 , 以后经验丰富了再来记录感想 ....
 
 --- 
 
