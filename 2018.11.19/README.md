@@ -131,7 +131,7 @@ I/O发生时涉及到的对象和步骤
 
 `阻塞I/O`    
 在linux,默认情况下所有的socket都是阻塞的 , 一个典型的 读操作的流程  
-<div align=center><img width="300" height="500" src="https://github.com/13269351120/Daily_Study/raw/master/2018.11.19/block.gif"/></div>  
+<div align=center><img width="500" height="300" src="https://github.com/13269351120/Daily_Study/raw/master/2018.11.19/block.gif"/></div>  
 
 可以看到 用户调用 recvfrom这个系统调用, 内核开始了I/O的第一个阶段 : 准备数据   
 对于网络IO来说 , 很多数据一开始 还未到达,这个时候 内核 需要等待数据到来 , 而在用户进程这边 , 整个进程会被阻塞 , 当 内核等到 数据全部准备好了 , 再将数据从 内核 拷贝到 用户内存中 ,然后 内核返回结果 , 用户进程 才解除 阻塞的状态 .重新运行起来 .  
@@ -140,7 +140,7 @@ I/O发生时涉及到的对象和步骤
 
 `非阻塞I/O`    
 linux下可以通过socket设置将其变成非阻塞的,下图    
-<div align=center><img width="300" height="500" src="https://github.com/13269351120/Daily_Study/raw/master/2018.11.19/nonblock.gif"/></div>  
+<div align=center><img width="500" height="300" src="https://github.com/13269351120/Daily_Study/raw/master/2018.11.19/nonblock.gif"/></div>  
 
 图中可以看出 用户进程发出 recvfrom系统调用后 内核的数据还没有准备好 , 它并不会阻塞用户的进程 , 而是立即返回一个 errono 比如EWOULDBLOCK , 根据这立即返回的 错误信息 它就知道 数据还没有准备好 , 然后隔一会又去问 内核 , 如果准备好了 ,内核将数据拷贝到用户内存中 , 并返回一个 ok .   
 `总结` : 非阻塞I/O在内核里 准备数据的阶段是阻塞的 , 但是 用户会一直去主动询问内核 数据准备好了没有  
